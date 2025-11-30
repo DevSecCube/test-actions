@@ -21,70 +21,8 @@ env:
   TEST_IMAGE: elasticsearch:7.10.1
 
 jobs:
-  test-trivy:
-    name: Test with Trivy scan
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Pull test image
-        run: docker pull ${{ env.TEST_IMAGE }}
-
-      - name: Run Trivy scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.TEST_IMAGE }}
-          format: sarif
-          output: trivy-results.sarif
-
-      - name: Run VulnSort on Trivy results
-        id: vulnsort
-        uses: shivamsaraswat/VulnSort@main
-        with:
-          scan-results-file: trivy-results.sarif
-          output-file: trivy-prioritized.sarif
-
-      - name: Display results
-        run: |
-          echo "## Trivy Scan Results"
-          echo "Critical (KEV): ${{ steps.vulnsort.outputs.critical-count }}"
-          echo "High (EPSS>=70%): ${{ steps.vulnsort.outputs.high-count }}"
-          echo "Medium (EPSS>=30%): ${{ steps.vulnsort.outputs.medium-count }}"
-          echo "Low (EPSS>=10%): ${{ steps.vulnsort.outputs.low-count }}"
-          echo "Info (EPSS<10%): ${{ steps.vulnsort.outputs.info-count }}"
-
-      - name: Verify output file created
-        run: |
-          if [ ! -f "trivy-prioritized.sarif" ]; then
-            echo "Error: Output file not created"
-            exit 1
-          fi
-
-      - name: Verify vulnsort fields added
-        run: |
-          if ! grep -q '"vulnsort"' trivy-prioritized.sarif; then
-            echo "Error: vulnsort fields not found in output"
-            exit 1
-          fi
-          echo "✓ vulnsort fields found in output"
-      
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: 'trivy-prioritized.sarif'
-
-      # - name: Upload results
-      #   uses: actions/upload-artifact@v5
-      #   with:
-      #     name: trivy-results
-      #     path: |
-      #       trivy-results.sarif
-      #       trivy-prioritized.sarif
-
-  # test-grype:
-  #   name: Test with Grype scan
+  # test-trivy:
+  #   name: Test with Trivy scan
   #   runs-on: ubuntu-latest
 
   #   steps:
@@ -94,55 +32,117 @@ jobs:
   #     - name: Pull test image
   #       run: docker pull ${{ env.TEST_IMAGE }}
 
-  #     - name: Run Grype scan
-  #       uses: anchore/scan-action@v7.2.1
+  #     - name: Run Trivy scan
+  #       uses: aquasecurity/trivy-action@master
   #       with:
-  #         image: ${{ env.TEST_IMAGE }}
-  #         output-format: sarif
-  #         output-file: grype-results.sarif
-  #         fail-build: false
-  #         only-fixed: true
+  #         image-ref: ${{ env.TEST_IMAGE }}
+  #         format: sarif
+  #         output: trivy-results.sarif
 
-      # - name: Run VulnSort on Grype results
-      #   id: vulnsort
-      #   uses: shivamsaraswat/VulnSort@main
-      #   with:
-      #     scan-results-file: grype-results.json
-      #     output-file: grype-prioritized.json
+  #     - name: Run VulnSort on Trivy results
+  #       id: vulnsort
+  #       uses: shivamsaraswat/VulnSort@main
+  #       with:
+  #         scan-results-file: trivy-results.sarif
+  #         output-file: trivy-prioritized.sarif
 
-      # - name: Display results
-      #   run: |
-      #     echo "## Grype Scan Results"
-      #     echo "Critical (KEV): ${{ steps.vulnsort.outputs.critical-count }}"
-      #     echo "High (EPSS>=70%): ${{ steps.vulnsort.outputs.high-count }}"
-      #     echo "Medium (EPSS>=30%): ${{ steps.vulnsort.outputs.medium-count }}"
-      #     echo "Low (EPSS>=10%): ${{ steps.vulnsort.outputs.low-count }}"
-      #     echo "Info (EPSS<10%): ${{ steps.vulnsort.outputs.info-count }}"
+  #     - name: Display results
+  #       run: |
+  #         echo "## Trivy Scan Results"
+  #         echo "Critical (KEV): ${{ steps.vulnsort.outputs.critical-count }}"
+  #         echo "High (EPSS>=70%): ${{ steps.vulnsort.outputs.high-count }}"
+  #         echo "Medium (EPSS>=30%): ${{ steps.vulnsort.outputs.medium-count }}"
+  #         echo "Low (EPSS>=10%): ${{ steps.vulnsort.outputs.low-count }}"
+  #         echo "Info (EPSS<10%): ${{ steps.vulnsort.outputs.info-count }}"
 
-      # - name: Verify output file created
-      #   run: |
-      #     if [ ! -f "grype-prioritized.json" ]; then
-      #       echo "Error: Output file not created"
-      #       exit 1
-      #     fi
+  #     - name: Verify output file created
+  #       run: |
+  #         if [ ! -f "trivy-prioritized.sarif" ]; then
+  #           echo "Error: Output file not created"
+  #           exit 1
+  #         fi
 
-      # - name: Verify vulnsort fields added
-      #   run: |
-      #     if ! grep -q '"vulnsort"' grype-prioritized.json; then
-      #       echo "Error: vulnsort fields not found in output"
-      #       exit 1
-      #     fi
-      #     echo "✓ vulnsort fields found in output"
+  #     - name: Verify vulnsort fields added
+  #       run: |
+  #         if ! grep -q '"vulnsort"' trivy-prioritized.sarif; then
+  #           echo "Error: vulnsort fields not found in output"
+  #           exit 1
+  #         fi
+  #         echo "✓ vulnsort fields found in output"
 
-      # - name: Upload results
-      #   uses: actions/upload-artifact@v5
-      #   with:
-      #     name: grype-results
-      #     path: |
-      #       grype-results.sarif
-      #       # grype-prioritized.json
+  #     - name: Upload Trivy scan results to GitHub Security tab
+  #       uses: github/codeql-action/upload-sarif@v4
+  #       with:
+  #         sarif_file: 'trivy-prioritized.sarif'
 
-      # - name: Upload Grype scan results to GitHub Security tab
-      #   uses: github/codeql-action/upload-sarif@v4
-      #   with:
-      #     sarif_file: 'grype-results.sarif'
+  #     - name: Upload results
+  #       uses: actions/upload-artifact@v5
+  #       with:
+  #         name: trivy-results
+  #         path: |
+  #           trivy-results.sarif
+  #           trivy-prioritized.sarif
+
+  test-grype:
+    name: Test with Grype scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Pull test image
+        run: docker pull ${{ env.TEST_IMAGE }}
+
+      - name: Run Grype scan
+        uses: anchore/scan-action@v7
+        with:
+          image: ${{ env.TEST_IMAGE }}
+          output-format: sarif
+          output-file: grype-results.sarif
+          fail-build: false
+          only-fixed: true
+
+      - name: Run VulnSort on Grype results
+        id: vulnsort
+        uses: shivamsaraswat/VulnSort@main
+        with:
+          scan-results-file: grype-results.sarif
+          output-file: grype-prioritized.sarif
+
+      - name: Display results
+        run: |
+          echo "## Grype Scan Results"
+          echo "Critical (KEV): ${{ steps.vulnsort.outputs.critical-count }}"
+          echo "High (EPSS>=70%): ${{ steps.vulnsort.outputs.high-count }}"
+          echo "Medium (EPSS>=30%): ${{ steps.vulnsort.outputs.medium-count }}"
+          echo "Low (EPSS>=10%): ${{ steps.vulnsort.outputs.low-count }}"
+          echo "Info (EPSS<10%): ${{ steps.vulnsort.outputs.info-count }}"
+
+      - name: Verify output file created
+        run: |
+          if [ ! -f "grype-prioritized.sarif" ]; then
+            echo "Error: Output file not created"
+            exit 1
+          fi
+
+      - name: Verify vulnsort fields added
+        run: |
+          if ! grep -q '"vulnsort"' grype-prioritized.sarif; then
+            echo "Error: vulnsort fields not found in output"
+            exit 1
+          fi
+          echo "✓ vulnsort fields found in output"
+
+      - name: Upload Grype scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: 'grype-prioritized.sarif'
+
+      - name: Upload results
+        uses: actions/upload-artifact@v5
+        with:
+          name: grype-results
+          path: |
+            grype-results.sarif
+            grype-prioritized.sarif
