@@ -13,6 +13,10 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+  security-events: write
+
 env:
   TEST_IMAGE: elasticsearch:7.10.1
 
