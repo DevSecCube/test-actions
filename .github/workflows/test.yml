@@ -32,8 +32,8 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.TEST_IMAGE }}
-          format: json
-          output: trivy-results.json
+          format: sarif
+          output: trivy-results.sarif
 
       # - name: Run VulnSort on Trivy results
       #   id: vulnsort
@@ -65,14 +65,19 @@ jobs:
       #       exit 1
       #     fi
       #     echo "✓ vulnsort fields found in output"
-
-      - name: Upload results
-        uses: actions/upload-artifact@v5
+      
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
         with:
-          name: trivy-results
-          path: |
-            trivy-results.json
-            # trivy-prioritized.json
+          sarif_file: 'trivy-results.sarif'
+
+      # - name: Upload results
+      #   uses: actions/upload-artifact@v5
+      #   with:
+      #     name: trivy-results
+      #     path: |
+      #       trivy-results.sarif
+      #       # trivy-prioritized.json
 
   test-grype:
     name: Test with Grype scan
@@ -89,8 +94,8 @@ jobs:
         uses: anchore/scan-action@v7.2.1
         with:
           image: ${{ env.TEST_IMAGE }}
-          output-format: json
-          output-file: grype-results.json
+          output-format: sarif
+          output-file: grype-results.sarif
           fail-build: false
           only-fixed: true
 
@@ -125,10 +130,15 @@ jobs:
       #     fi
       #     echo "✓ vulnsort fields found in output"
 
-      - name: Upload results
-        uses: actions/upload-artifact@v5
+      # - name: Upload results
+      #   uses: actions/upload-artifact@v5
+      #   with:
+      #     name: grype-results
+      #     path: |
+      #       grype-results.sarif
+      #       # grype-prioritized.json
+
+      - name: Upload Grype scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
         with:
-          name: grype-results
-          path: |
-            grype-results.json
-            # grype-prioritized.json
+          sarif_file: 'grype-results.sarif'
