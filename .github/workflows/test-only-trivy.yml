@@ -1,4 +1,4 @@
-name: Test Trivy
+name: Test VulnSort with Trivy
 
 on:
   push:
@@ -18,7 +18,7 @@ env:
 
 jobs:
   test-trivy:
-    name: Test with Trivy scan (without VulnSort)
+    name: Test with Trivy scan (with VulnSort)
     runs-on: ubuntu-latest
 
     steps:
@@ -35,10 +35,41 @@ jobs:
           format: sarif
           output: trivy-results.sarif
 
+      - name: Run VulnSort on Trivy results
+        id: vulnsort
+        uses: shivamsaraswat/VulnSort@main
+        with:
+          scan-results-file: trivy-results.sarif
+          output-file: trivy-prioritized.sarif
+
+      - name: Display results
+        run: |
+          echo "## Trivy Scan Results"
+          echo "Critical (KEV): ${{ steps.vulnsort.outputs.critical-count }}"
+          echo "High (EPSS>=70%): ${{ steps.vulnsort.outputs.high-count }}"
+          echo "Medium (EPSS>=30%): ${{ steps.vulnsort.outputs.medium-count }}"
+          echo "Low (EPSS>=10%): ${{ steps.vulnsort.outputs.low-count }}"
+          echo "Info (EPSS<10%): ${{ steps.vulnsort.outputs.info-count }}"
+
+      - name: Verify output file created
+        run: |
+          if [ ! -f "trivy-prioritized.sarif" ]; then
+            echo "Error: Output file not created"
+            exit 1
+          fi
+
+      - name: Verify vulnsort fields added
+        run: |
+          if ! grep -q '"vulnsort"' trivy-prioritized.sarif; then
+            echo "Error: vulnsort fields not found in output"
+            exit 1
+          fi
+          echo "✓ vulnsort fields found in output"
+
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: 'trivy-prioritized.sarif'
 
       - name: Upload results
         uses: actions/upload-artifact@v5
@@ -46,3 +77,4 @@ jobs:
           name: trivy-results
           path: |
             trivy-results.sarif
+            trivy-prioritized.sarif
