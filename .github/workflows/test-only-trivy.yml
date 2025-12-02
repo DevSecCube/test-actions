@@ -1,0 +1,48 @@
+name: Test Trivy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+env:
+  TEST_IMAGE: nginx:1.21.1-alpine
+
+jobs:
+  test-trivy:
+    name: Test with Trivy scan (without VulnSort)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Pull test image
+        run: docker pull ${{ env.TEST_IMAGE }}
+
+      - name: Run Trivy scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.TEST_IMAGE }}
+          format: sarif
+          output: trivy-results.sarif
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Upload results
+        uses: actions/upload-artifact@v5
+        with:
+          name: trivy-results
+          path: |
+            trivy-results.sarif
